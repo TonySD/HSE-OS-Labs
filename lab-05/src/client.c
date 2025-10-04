@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
+#include <sys/un.h> 
 #include <arpa/inet.h>
 #include <dirent.h>
 #include <fcntl.h>
@@ -70,7 +70,6 @@ int main() {
     }
     struct dirent *de;
     while ((de = readdir(d))) {
-        // if not directory or unknown, skip
         if (de->d_type != DT_DIR && de->d_type != DT_UNKNOWN) continue;
         if (!is_digits(de->d_name)) continue;
 
@@ -85,16 +84,28 @@ int main() {
     }
     closedir(d);
 
-    int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    int sockfd = socket(AF_UNIX, SOCK_DGRAM, 0);
     if (sockfd < 0) {
         write(2, "socket failed\n", 15);
         return 1;
     }
 
-    struct sockaddr_in srv;
-    srv.sin_family = AF_INET;
-    srv.sin_port = htons(SOCKET_PORT);
-    srv.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // 127.0.0.1
+    struct sockaddr_un client_addr;
+    memset(&client_addr, 0, sizeof(client_addr));
+    client_addr.sun_family = AF_UNIX;
+
+    for (size_t i = 0; i < my_strlen(CLIENT_SOCKET_PATH); ++i) client_addr.sun_path[i] = CLIENT_SOCKET_PATH[i];
+    unlink(CLIENT_SOCKET_PATH);
+
+    if (bind(sockfd, (struct sockaddr *)&client_addr, sizeof(client_addr)) < 0) {
+        write(2, "bind client", 11);
+        return 1;
+    }
+
+    struct sockaddr_un addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sun_family = AF_UNIX;
+    for (size_t i = 0; i < my_strlen(SERVER_SOCKET_PATH); ++i) addr.sun_path[i] = SERVER_SOCKET_PATH[i];
 
     if (sendpos == 0) {
         // if nothing found - send 0
@@ -103,7 +114,7 @@ int main() {
         sendbuf[1] = '\n';
     }
 
-    if (sendto(sockfd, sendbuf, sendpos, 0, (struct sockaddr *)&srv, sizeof(srv)) < 0) {
+    if (sendto(sockfd, sendbuf, sendpos, 0, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
         write(2, "sendto failed\n", 14);
         return 1;
     }
@@ -115,6 +126,9 @@ int main() {
         return 1;
     }
     write(1, recvbuf, (size_t)bytes_read);
+
+    unlink(CLIENT_SOCKET_PATH);
+    unlink(SERVER_SOCKET_PATH);
     return 0;
 }
 

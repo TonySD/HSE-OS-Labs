@@ -2,7 +2,9 @@
 #define HELPERS_H
 
 #include <stddef.h>
-#define SOCKET_PORT 13337
+#include <string.h>
+#define SERVER_SOCKET_PATH "/tmp/lab-05-server.sock"
+#define CLIENT_SOCKET_PATH "/tmp/lab-05-client.sock"
 
 int is_digits(const char *s) {
     if (!s || !*s) return 0;
@@ -58,6 +60,12 @@ long str_to_i64(const char *s) {
         result = result * 10 + (*s - '0');
         s++;
     }
+    return result;
+}
+
+size_t my_strlen(const char *s) {
+    size_t result = 0;
+    while (*s++) result++;
     return result;
 }
 
