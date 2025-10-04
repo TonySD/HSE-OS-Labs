@@ -4,7 +4,7 @@
 #include <sys/types.h>
 #include <stddef.h>
 
-#define SHM_KEY 0x24680
+#define SHM_KEY 0xCAFEBABE
 #define SHM_SIZE 65536
 
 struct shm_header {
