@@ -9,9 +9,7 @@
 // argv[1] = message type
 int main(int argc, char **argv) {
     char buf[128];
-    key_t key = MESSAGE_KEY;
-    int flags = IPC_CREAT | 0666;
-    long queue_id = msgget(key, flags);
+    long queue_id = msgget((key_t) MESSAGE_KEY, IPC_CREAT | 0666);
     if (queue_id < 0) {
         write(2, "msgget failed\n", 14);
         return 1;
@@ -23,15 +21,15 @@ int main(int argc, char **argv) {
     }
 
     struct msgbuf_local current_message, last_message;
-    char received_at_least_once = 0;
     size_t counter = 0;
     long bytes_read;
     while (1) {
         bytes_read = msgrcv(queue_id, &current_message, sizeof(struct msgbuf_local) - sizeof(long), message_type, IPC_NOWAIT);
-        if (bytes_read < 0 && received_at_least_once) break;
+        
+        if (bytes_read < 0 && counter) break;
         else if (bytes_read < 0) continue;
+
         last_message = current_message;
-        received_at_least_once = 1;
         counter++;
     }
 

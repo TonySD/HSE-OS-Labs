@@ -28,12 +28,12 @@ int main(int argc, char **argv) {
     char command[1024];
     const char *user_name = getenv("USER");
     if (!user_name) user_name = "root";
-    snprintf(command, sizeof(command), "cat /var/mail/%s | grep -E '^(From|Date):' | cut -d ':' -f2- | cut -d '(' -f1", user_name);
+    snprintf(command, 1024, "cat /var/mail/%s | grep -E '^(From|Date):' | cut -d ':' -f2- | cut -d '(' -f1", user_name);
 
     char *mail_file = program_exec(command);
 
     long now_seconds = (long)time(0);
-    long week_seconds = 7L * 24L * 3600L;
+    long week_seconds = 7L * 24L * 60L * 60L;
 
     char *line = strtok(mail_file, "\n");
     while (line) {
